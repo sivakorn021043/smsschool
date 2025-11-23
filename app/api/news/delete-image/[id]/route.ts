@@ -3,10 +3,12 @@ import { supabaseServer } from "@/lib/supabaseServer";
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const filename = params.id;
+    const { id } = await context.params;  // ⭐ ต้อง await แบบนี้
+
+    const filename = id;
     const bucket = process.env.SUPABASE_BUCKET!;
 
     const { error } = await supabaseServer.storage
