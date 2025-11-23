@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model News {
+  id        Int         @id @default(autoincrement())
+  title     String
+  detail    String
+  createdAt DateTime    @default(now())
+  media     NewsMedia[]
+}
+
+model NewsMedia {
+  id     Int    @id @default(autoincrement())
+  url    String
+  newsId Int
+  news   News   @relation(fields: [newsId], references: [id])
+}
+
+model Admin {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String
+  createdAt DateTime @default(now())
+}
+
+model Staff {
+  id        Int      @id @default(autoincrement())
+  name      String
+  position  String
+  email     String?
+  phone     String?
+  imageUrl  String?
+  createdAt DateTime @default(now())
+}
+model Settings {
+  id            String   @id @default("settings")  // บังคับให้มีเรคคอร์ดเดียว
+  schoolName    String?
+  address       String?
+  phone         String?
+  email         String?
+  vision        String?
+  logoUrl       String?
+  heroImageUrl  String?
+
+  // ⭐ เพิ่มตรงนี้ ⭐
+  history       String?   @db.Text   // ประวัติโรงเรียน
+  about         String?   @db.Text   // ข้อมูลเพิ่มเติมเกี่ยวกับโรงเรียน
+  philosophy    String?   
+
+  updatedAt     DateTime @updatedAt
+}
+
+
