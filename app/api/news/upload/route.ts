@@ -2,9 +2,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@supabase/supabase-js";
-import sharp from "sharp";
 
-export const runtime = "nodejs";
+export const runtime = "nodejs"; // สำหรับ Cloudflare Pages
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -32,25 +31,15 @@ export async function POST(req: Request) {
 
     // 2) อัปโหลดไฟล์ทั้งหมดลง Supabase
     for (const file of files) {
-      const buf = Buffer.from(await file.arrayBuffer());
-
-      // ย่อรูป
-      let compressed = buf;
-      try {
-        compressed = await sharp(buf)
-          .resize(1200)
-          .jpeg({ quality: 80 })
-          .toBuffer();
-      } catch (e) {
-        console.log("sharp fallback", e);
-      }
+      const arrayBuf = await file.arrayBuffer();
+      const buf = Buffer.from(arrayBuf); // ⭐ ใช้ค่า buffer ตรง ๆ (ไม่ใช้ sharp)
 
       const ext = file.name.split(".").pop() || "jpg";
       const path = `news/${news.id}_${Date.now()}.${ext}`;
 
       const { error } = await supabase.storage
         .from(bucket)
-        .upload(path, compressed, {
+        .upload(path, buf, {
           contentType: file.type,
         });
 
@@ -65,7 +54,7 @@ export async function POST(req: Request) {
 
       urls.push(publicUrl);
 
-      // 3) บันทึกรูปลง NewsMedia (ชื่อที่ถูกต้อง!)
+      // 3) บันทึกรูปลง NewsMedia
       await prisma.newsMedia.create({
         data: {
           newsId: news.id,
