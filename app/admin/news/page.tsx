@@ -1,10 +1,14 @@
+export const dynamic = "force-dynamic";   // ❗ บังคับ SSR
+export const runtime = "nodejs";          // ❗ Prisma ต้อง Node runtime
+
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import DeleteButton from "@/app/admin/news/DeleteButton";   // ✔ แก้แล้ว
+import DeleteButton from "@/app/admin/news/DeleteButton";
 
 export default async function AdminNewsPage() {
+  // ❗ SSR Query Prisma ได้ปกติหลังปิด prerender แบบด้านบน
   const newsList = await prisma.news.findMany({
     orderBy: { createdAt: "desc" },
   });
@@ -43,7 +47,6 @@ export default async function AdminNewsPage() {
               </div>
 
               <div className="flex gap-4">
-
                 <Link
                   href={`/admin/news/${n.id}`}
                   className="text-blue-600 hover:underline"
@@ -51,14 +54,14 @@ export default async function AdminNewsPage() {
                   แก้ไข
                 </Link>
 
-                <DeleteButton id={n.id} />  {/* ✔ ใช้ตัวที่เป็น client component จริง */}
+                <DeleteButton id={n.id} />
               </div>
             </div>
           ))}
         </div>
       </main>
 
-     
+      <Footer />
     </div>
   );
 }
