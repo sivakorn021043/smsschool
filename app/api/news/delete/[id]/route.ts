@@ -1,4 +1,11 @@
-export async function POST(req, context) {
+import { NextResponse } from "next/server";
+import { supabaseServer } from "@/lib/supabaseServer";
+import { prisma } from "@/lib/prisma";
+
+export async function POST(
+  req: Request,
+  context: { params: { id: string } }   // ❤️ ต้องมี
+) {
   const { id } = context.params;
   const nid = Number(id);
 
