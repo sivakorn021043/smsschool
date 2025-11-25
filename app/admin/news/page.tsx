@@ -1,6 +1,6 @@
-export const dynamic = "force-dynamic";   // บังคับ SSR ทุกครั้ง
-export const runtime = "nodejs";          // Prisma ต้องใช้ Node runtime
-export const revalidate = 0;              // ❗ ปิด cache SSR แบบถาวร
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+export const revalidate = 0;
 
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -11,6 +11,7 @@ import DeleteButton from "@/app/admin/news/DeleteButton";
 export default async function AdminNewsPage() {
   const newsList = await prisma.news.findMany({
     orderBy: { createdAt: "desc" },
+    include: { media: true }, // แนะนำ include เพื่อใช้ข้อมูลรูปด้วย (ถ้าต้องการ)
   });
 
   return (
@@ -21,10 +22,9 @@ export default async function AdminNewsPage() {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">จัดการข่าว</h1>
 
-          {/* ปิด prefetch เพื่อไม่ให้ Next แคชเพจ */}
           <Link
             href="/admin/news/add"
-            prefetch={false}   // ⭐ สำคัญมาก
+            prefetch={false}
             className="bg-green-600 text-white px-3 py-2 rounded"
           >
             + เพิ่มข่าว
@@ -49,10 +49,9 @@ export default async function AdminNewsPage() {
               </div>
 
               <div className="flex gap-4">
-                {/* ปิด prefetch เพื่อให้ refresh หลังลบทำงาน */}
                 <Link
                   href={`/admin/news/${n.id}`}
-                  prefetch={false}   // ⭐ สำคัญมาก
+                  prefetch={false}
                   className="text-blue-600 hover:underline"
                 >
                   แก้ไข

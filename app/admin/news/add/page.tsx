@@ -2,8 +2,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function AddNewsPage() {
+  const router = useRouter();
+
   const [title, setTitle] = useState("");
   const [detail, setDetail] = useState("");
   const [files, setFiles] = useState<FileList | null>(null);
@@ -14,7 +17,6 @@ export default function AddNewsPage() {
     const f = e.target.files as FileList;
     setFiles(f);
 
-    // สร้าง Preview รูป
     const arr: string[] = [];
     for (let i = 0; i < f.length; i++) {
       arr.push(URL.createObjectURL(f[i]));
@@ -29,6 +31,7 @@ export default function AddNewsPage() {
     const form = new FormData();
     form.append("title", title);
     form.append("detail", detail);
+
     if (files) {
       for (let i = 0; i < files.length; i++) {
         form.append("files", files[i]);
@@ -52,8 +55,11 @@ export default function AddNewsPage() {
 
     setMsg("เพิ่มข่าวสำเร็จ!");
 
+    // ⭐ Redirect กลับหน้าแอดมินข่าว (ไม่ใช่ /news)
+    // ⭐ refresh ช่วยให้ SSR ดึงข้อมูลใหม่ทันที
     setTimeout(() => {
-      window.location.href = "/news";
+      router.push("/admin/news");
+      router.refresh();
     }, 700);
   }
 
@@ -62,7 +68,6 @@ export default function AddNewsPage() {
       <h1 className="text-2xl font-bold mb-4">เพิ่มข่าว</h1>
 
       <form onSubmit={submit} className="space-y-4">
-
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -80,7 +85,6 @@ export default function AddNewsPage() {
           required
         />
 
-        {/* อัปโหลดไฟล์ */}
         <div>
           <input
             type="file"
@@ -91,7 +95,6 @@ export default function AddNewsPage() {
           />
         </div>
 
-        {/* Preview รูป */}
         {preview.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
             {preview.map((src, i) => (
@@ -104,9 +107,7 @@ export default function AddNewsPage() {
           </div>
         )}
 
-        <button
-          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition w-full mt-4"
-        >
+        <button className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition w-full mt-4">
           บันทึก
         </button>
       </form>
