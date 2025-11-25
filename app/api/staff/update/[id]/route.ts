@@ -2,9 +2,12 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { supabaseServer } from "@/lib/supabaseServer";
 
-export async function POST(req: Request, context: any) {
+export async function POST(
+  req: Request,
+  context: { params: { id: string } }   // ⭐ FIX: type ที่ถูกต้อง
+) {
   try {
-    const { id } = await context.params;
+    const { id } = context.params;       // ⭐ FIX: ไม่ต้อง await
     const staffId = Number(id);
 
     const form = await req.formData();
@@ -30,13 +33,10 @@ export async function POST(req: Request, context: any) {
       const arrayBuffer = await image.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
-      // ใช้ bucket ที่ถูกต้อง
       const bucket = "upload";
-
       const newFileName = `staff_${staffId}_${Date.now()}.jpg`;
 
-      // อัปโหลดรูป
-      const { data: uploadData, error: uploadError } =
+      const { error: uploadError } =
         await supabaseServer.storage
           .from(bucket)
           .upload(newFileName, buffer, {
@@ -54,11 +54,10 @@ export async function POST(req: Request, context: any) {
 
       // ลบรูปเก่า ถ้ามี
       if (imageUrl) {
-        const bucketPath = imageUrl.split("/").splice(-1)[0];
-        await supabaseServer.storage.from(bucket).remove([bucketPath]);
+        const oldFileName = imageUrl.split("/").pop()!;
+        await supabaseServer.storage.from(bucket).remove([oldFileName]);
       }
 
-      // เอา public URL
       const {
         data: { publicUrl },
       } = supabaseServer.storage.from(bucket).getPublicUrl(newFileName);
@@ -71,14 +70,7 @@ export async function POST(req: Request, context: any) {
     // -----------------------------
     await prisma.staff.update({
       where: { id: staffId },
-      data: {
-        name,
-        position,
-        email,
-        phone,
-        imageUrl,
-        
-      },
+      data: { name, position, email, phone, imageUrl },
     });
 
     return NextResponse.json({ ok: true });

@@ -1,16 +1,19 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function DELETE(req: Request, context: any) {
+export async function DELETE(
+  req: Request,
+  context: { params: { id: string } }   // ⭐ FIX: ระบุ type ให้ถูก
+) {
   try {
-    const params = await context.params;
-    const id = Number(params.id);
+    const { id } = context.params;       // ⭐ FIX: ไม่ต้อง await
+    const nid = Number(id);
 
-    if (isNaN(id)) {
+    if (isNaN(nid)) {
       return NextResponse.json({ ok: false, message: "ID ไม่ถูกต้อง" });
     }
 
-    await prisma.staff.delete({ where: { id } });
+    await prisma.staff.delete({ where: { id: nid } });
 
     return NextResponse.json({ ok: true });
 
