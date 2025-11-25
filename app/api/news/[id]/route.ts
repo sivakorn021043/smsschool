@@ -9,10 +9,9 @@ export const runtime = "nodejs";
 // ================= GET =================
 export async function GET(
   req: Request,
-  context: { params: Promise<{ id: string }> }
+  context: { params: { id: string } }   // ⭐ FIX: ไม่มี Promise
 ) {
-  // ⭐ FIX: params เป็น Promise → ต้อง await
-  const { id } = await context.params;
+  const { id } = context.params;        // ⭐ FIX: ไม่ต้อง await
   const nid = Number(id);
 
   if (!nid || isNaN(nid)) {
@@ -33,8 +32,6 @@ export async function GET(
     .from(bucket)
     .list("news");
 
-  if (error) console.error("SUPABASE LIST ERROR:", error);
-
   const images =
     (files || [])
       .filter((f) => f.name.startsWith(`${nid}_`))
@@ -53,11 +50,10 @@ export async function GET(
 // ================= PATCH =================
 export async function PATCH(
   req: Request,
-  context: { params: Promise<{ id: string }> }
+  context: { params: { id: string } }   // ⭐ FIX: ไม่มี Promise
 ) {
   try {
-    // ⭐ FIX: params เป็น Promise → ต้อง await
-    const { id } = await context.params;
+    const { id } = context.params;      // ⭐ FIX: ไม่ต้อง await
     const nid = Number(id);
 
     if (!nid || isNaN(nid)) {
@@ -98,16 +94,13 @@ export async function PATCH(
           upsert: true,
         });
 
-      if (error) {
-        console.error("UPLOAD ERROR:", error);
-        continue;
+      if (!error) {
+        uploadedUrls.push(
+          supabaseServer.storage
+            .from(bucket)
+            .getPublicUrl(filePath).data.publicUrl
+        );
       }
-
-      const publicUrl = supabaseServer.storage
-        .from(bucket)
-        .getPublicUrl(filePath).data.publicUrl;
-
-      uploadedUrls.push(publicUrl);
     }
 
     return NextResponse.json({
@@ -115,8 +108,8 @@ export async function PATCH(
       message: "Update success",
       uploadedUrls,
     });
+
   } catch (err: any) {
-    console.error("PATCH ERROR:", err);
     return NextResponse.json({ ok: false, message: err.message });
   }
 }
