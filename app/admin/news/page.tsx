@@ -1,5 +1,6 @@
-export const dynamic = "force-dynamic";   // ❗ บังคับ SSR
-export const runtime = "nodejs";          // ❗ Prisma ต้อง Node runtime
+export const dynamic = "force-dynamic";   // บังคับ SSR (สำคัญ)
+export const runtime = "nodejs";          // Prisma ต้องใช้ Node runtime
+export const revalidate = 0;              // ❗ ปิด cache SSR 100%
 
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -8,7 +9,6 @@ import { prisma } from "@/lib/prisma";
 import DeleteButton from "@/app/admin/news/DeleteButton";
 
 export default async function AdminNewsPage() {
-  // ❗ SSR Query Prisma ได้ปกติหลังปิด prerender แบบด้านบน
   const newsList = await prisma.news.findMany({
     orderBy: { createdAt: "desc" },
   });
