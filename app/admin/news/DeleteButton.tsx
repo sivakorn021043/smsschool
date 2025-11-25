@@ -1,11 +1,15 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 export default function DeleteButton({ id }: { id: number }) {
+  const router = useRouter();
+
   async function handleDelete() {
     if (!confirm("ต้องการลบข่าวนี้จริงหรือไม่?")) return;
 
     const res = await fetch(`/api/news/delete/${id}`, {
-      method: "DELETE",  // ❗ เปลี่ยนจาก POST เป็น DELETE
+      method: "POST",
     });
 
     let json = null;
@@ -22,7 +26,9 @@ export default function DeleteButton({ id }: { id: number }) {
     }
 
     alert("ลบสำเร็จ");
-    window.location.reload();
+
+    // 🔥 Refresh เฉพาะข้อมูลที่ SSR (เร็วกว่า reload ทั้งหน้า)
+    router.refresh();
   }
 
   return (
