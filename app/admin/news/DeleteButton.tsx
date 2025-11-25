@@ -12,22 +12,13 @@ export default function DeleteButton({ id }: { id: number }) {
       method: "POST",
     });
 
-    let json = null;
-    try {
-      json = await res.json();
-    } catch (e) {
-      alert("Server error");
-      return;
-    }
+    const json = await res.json().catch(() => null);
 
-    if (!json.ok) {
+    if (!json || !json.ok) {
       alert("ลบไม่สำเร็จ: " + (json?.message || "server error"));
       return;
     }
 
-    alert("ลบสำเร็จ");
-
-    // 🔥 Refresh เฉพาะข้อมูลที่ SSR (เร็วกว่า reload ทั้งหน้า)
     router.refresh();
   }
 

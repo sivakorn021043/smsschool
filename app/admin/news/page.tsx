@@ -1,18 +1,30 @@
-export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
-export const revalidate = 0;
+"use client";
 
+import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
 import DeleteButton from "@/app/admin/news/DeleteButton";
 
-export default async function AdminNewsPage() {
-  const newsList = await prisma.news.findMany({
-    orderBy: { createdAt: "desc" },
-    include: { media: true }, // แนะนำ include เพื่อใช้ข้อมูลรูปด้วย (ถ้าต้องการ)
-  });
+export default function AdminNewsPage() {
+  const [newsList, setNewsList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      const res = await fetch("/api/news/list");
+      const json = await res.json();
+
+      if (json.ok) {
+        setNewsList(json.data);
+      }
+
+      setLoading(false);
+    }
+    load();
+  }, []);
+
+  if (loading) return <div className="p-10 text-center">กำลังโหลด...</div>;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -24,7 +36,6 @@ export default async function AdminNewsPage() {
 
           <Link
             href="/admin/news/add"
-            prefetch={false}
             className="bg-green-600 text-white px-3 py-2 rounded"
           >
             + เพิ่มข่าว
@@ -51,7 +62,6 @@ export default async function AdminNewsPage() {
               <div className="flex gap-4">
                 <Link
                   href={`/admin/news/${n.id}`}
-                  prefetch={false}
                   className="text-blue-600 hover:underline"
                 >
                   แก้ไข
