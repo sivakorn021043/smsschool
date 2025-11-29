@@ -3,10 +3,10 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(
   req: Request,
-  context: { params: { id: string } }   // <- กำหนด type ให้ถูกต้อง
+  context: { params: Promise<{ id: string }> }   // <- กำหนด type ให้ถูกต้อง
 ) {
   try {
-    const { id } = context.params;        // <- ไม่ต้อง await
+    const { id } = await (context.params);        // <- ไม่ต้อง await
     const nid = Number(id);
 
     if (!nid || isNaN(nid)) {

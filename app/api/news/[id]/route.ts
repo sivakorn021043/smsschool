@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { supabaseServer } from "@/lib/supabaseServer";
 import sharp from "sharp";
@@ -8,14 +8,17 @@ export const runtime = "nodejs";
 
 // ================= GET =================
 export async function GET(
-  req: Request,
-  context: { params: { id: string } }   // ⭐ FIX: ไม่มี Promise
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }   // ✅ ต้องเป็น Promise
 ) {
-  const { id } = context.params;        // ⭐ FIX: ไม่ต้อง await
+  const { id } = await context.params;           // ✅ ต้อง await
   const nid = Number(id);
 
   if (!nid || isNaN(nid)) {
-    return NextResponse.json({ ok: false, message: "ID ไม่ถูกต้อง" });
+    return NextResponse.json(
+      { ok: false, message: "ID ไม่ถูกต้อง" },
+      { status: 400 }
+    );
   }
 
   const news = await prisma.news.findUnique({
@@ -23,12 +26,15 @@ export async function GET(
   });
 
   if (!news) {
-    return NextResponse.json({ ok: false, message: "ไม่พบข้อมูล" });
+    return NextResponse.json(
+      { ok: false, message: "ไม่พบข้อมูล" },
+      { status: 404 }
+    );
   }
 
   const bucket = process.env.SUPABASE_BUCKET!;
 
-  const { data: files, error } = await supabaseServer.storage
+  const { data: files } = await supabaseServer.storage
     .from(bucket)
     .list("news");
 
@@ -45,19 +51,20 @@ export async function GET(
   return NextResponse.json({ ok: true, data: news, images });
 }
 
-
-
 // ================= PATCH =================
 export async function PATCH(
-  req: Request,
-  context: { params: { id: string } }   // ⭐ FIX: ไม่มี Promise
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }   // ✅ ต้องเป็น Promise
 ) {
   try {
-    const { id } = context.params;      // ⭐ FIX: ไม่ต้อง await
+    const { id } = await context.params;         // ✅ ต้อง await
     const nid = Number(id);
 
     if (!nid || isNaN(nid)) {
-      return NextResponse.json({ ok: false, message: "ID ไม่ถูกต้อง" });
+      return NextResponse.json(
+        { ok: false, message: "ID ไม่ถูกต้อง" },
+        { status: 400 }
+      );
     }
 
     const form = await req.formData();
@@ -66,7 +73,10 @@ export async function PATCH(
     const files = form.getAll("files") as File[];
 
     if (!title || !detail) {
-      return NextResponse.json({ ok: false, message: "Missing fields" });
+      return NextResponse.json(
+        { ok: false, message: "Missing fields" },
+        { status: 400 }
+      );
     }
 
     await prisma.news.update({
@@ -110,6 +120,9 @@ export async function PATCH(
     });
 
   } catch (err: any) {
-    return NextResponse.json({ ok: false, message: err.message });
+    return NextResponse.json(
+      { ok: false, message: err.message },
+      { status: 500 }
+    );
   }
 }

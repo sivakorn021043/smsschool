@@ -1,14 +1,21 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 export async function POST(
-  req: Request,
-  context: { params: { id: string } }   // ⭐ FIX: type ที่ถูกต้อง
+  req: NextRequest,                               // ✅ ต้องเป็น NextRequest
+  context: { params: Promise<{ id: string }> }   // ✅ ต้องเป็น Promise
 ) {
   try {
-    const { id } = context.params;       // ⭐ FIX: ไม่ต้อง await
+    const { id } = await context.params;         // ✅ ต้อง await
     const staffId = Number(id);
+
+    if (isNaN(staffId)) {
+      return NextResponse.json(
+        { ok: false, message: "ID ไม่ถูกต้อง" },
+        { status: 400 }
+      );
+    }
 
     const form = await req.formData();
 
@@ -24,7 +31,14 @@ export async function POST(
       where: { id: staffId },
     });
 
-    let imageUrl = staff?.imageUrl || "";
+    if (!staff) {
+      return NextResponse.json(
+        { ok: false, message: "ไม่พบบุคลากร" },
+        { status: 404 }
+      );
+    }
+
+    let imageUrl = staff.imageUrl || "";
 
     // -----------------------------
     // 1) อัปโหลดรูปใหม่ (ถ้ามี)
@@ -46,16 +60,18 @@ export async function POST(
 
       if (uploadError) {
         console.error(uploadError);
-        return NextResponse.json({
-          ok: false,
-          message: "อัปโหลดรูปใหม่ไม่สำเร็จ",
-        });
+        return NextResponse.json(
+          { ok: false, message: "อัปโหลดรูปใหม่ไม่สำเร็จ" },
+          { status: 500 }
+        );
       }
 
-      // ลบรูปเก่า ถ้ามี
+      // ลบรูปเก่า (ถ้ามี)
       if (imageUrl) {
         const oldFileName = imageUrl.split("/").pop()!;
-        await supabaseServer.storage.from(bucket).remove([oldFileName]);
+        await supabaseServer.storage
+          .from(bucket)
+          .remove([oldFileName]);
       }
 
       const {
@@ -74,8 +90,12 @@ export async function POST(
     });
 
     return NextResponse.json({ ok: true });
+
   } catch (err: any) {
-    console.error(err);
-    return NextResponse.json({ ok: false, message: err.message });
+    console.error("UPDATE STAFF ERROR:", err);
+    return NextResponse.json(
+      { ok: false, message: err.message },
+      { status: 500 }
+    );
   }
 }

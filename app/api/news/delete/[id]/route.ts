@@ -1,13 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabaseServer";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(
-  req: Request,
-  context: { params: { id: string } }
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }   // ✅ ต้องเป็น Promise (Next 16)
 ) {
   try {
-    const { id } = context.params;
+    const { id } = await context.params;         // ✅ ต้อง await
     const nid = Number(id);
 
     if (isNaN(nid)) {
@@ -17,11 +17,11 @@ export async function POST(
       );
     }
 
-    // ⭐ ใช้ bucket ที่ถูกต้อง (ต้องตรงกับ upload API)
+    // ✅ ใช้ bucket ที่ถูกต้อง (ต้องตรงกับ upload API)
     const bucket = "upload";
     const prefix = `${nid}_`;
 
-    // ⭐ List รูปในโฟลเดอร์ news
+    // ✅ List รูปในโฟลเดอร์ news
     const { data: files, error: listError } =
       await supabaseServer.storage.from(bucket).list("news");
 
@@ -29,7 +29,7 @@ export async function POST(
       console.error("SUPABASE LIST ERROR:", listError);
     }
 
-    // ⭐ ลบเฉพาะไฟล์ที่ชื่อขึ้นต้นด้วย <id>_
+    // ✅ ลบเฉพาะไฟล์ที่ชื่อขึ้นต้นด้วย <id>_
     if (files) {
       const toDelete = files
         .filter((f) => f.name.startsWith(prefix))
@@ -40,13 +40,17 @@ export async function POST(
       }
     }
 
-    // ⭐ ลบข้อมูลใน DB
+    // ✅ ลบข้อมูลใน DB
     await prisma.newsMedia.deleteMany({ where: { newsId: nid } });
     await prisma.news.delete({ where: { id: nid } });
 
     return NextResponse.json({ ok: true });
+
   } catch (err: any) {
     console.error("DELETE ERROR:", err);
-    return NextResponse.json({ ok: false, message: err.message });
+    return NextResponse.json(
+      { ok: false, message: err.message },
+      { status: 500 }
+    );
   }
 }
